@@ -11,6 +11,18 @@ import osp.Memory.*;
 import osp.Resources.*;
 
 /**
+ * ID: 111157499
+ *  Name: Daniel Garcia
+ * Email: danieljedryl.garcia@stonybrook.edu
+ * Project 1: Threads
+ * Due Date: March 12, 2019
+ * Pledge: I pledge my honor that all parts of this project were done 
+ * by me individually, without collaboration with anyone, and without 
+ * consulting any external sources that could help with similar 
+ * projects.
+*/
+
+/**
    This class is responsible for actions related to threads, including
    creating, killing, dispatching, resuming, and suspending threads.
 

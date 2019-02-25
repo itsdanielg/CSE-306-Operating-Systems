@@ -4,6 +4,18 @@ import osp.IFLModules.*;
 import osp.Utilities.*;
 import osp.Hardware.*;
 
+/**
+ * ID: 111157499
+ *  Name: Daniel Garcia
+ * Email: danieljedryl.garcia@stonybrook.edu
+ * Project 1: Threads
+ * Due Date: March 12, 2019
+ * Pledge: I pledge my honor that all parts of this project were done 
+ * by me individually, without collaboration with anyone, and without 
+ * consulting any external sources that could help with similar 
+ * projects.
+*/
+
 /**    
        The timer interrupt handler.  This class is called upon to
        handle timer interrupts.
