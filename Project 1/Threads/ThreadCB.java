@@ -28,8 +28,7 @@ import osp.Resources.*;
 
    @OSPProject Threads
 */
-public class ThreadCB extends IflThreadCB 
-{
+public class ThreadCB extends IflThreadCB {
     /**
        The thread constructor. Must call 
 
@@ -39,10 +38,8 @@ public class ThreadCB extends IflThreadCB
 
        @OSPProject Threads
     */
-    public ThreadCB()
-    {
-        // your code goes here
-
+    public ThreadCB() {
+        super();
     }
 
     /**
@@ -51,10 +48,8 @@ public class ThreadCB extends IflThreadCB
        
        @OSPProject Threads
     */
-    public static void init()
-    {
-        // your code goes here
-
+    public static void init() {
+        // Unused
     }
 
     /** 
@@ -74,10 +69,23 @@ public class ThreadCB extends IflThreadCB
 
         @OSPProject Threads
     */
-    static public ThreadCB do_create(TaskCB task)
-    {
-        // your code goes here
-
+    static public ThreadCB do_create(TaskCB task) {
+        ThreadCB threadCB = new ThreadCB();
+        threadCB.setTask(task);
+        if (task.getThreadCount() > MaxThreadsPerTask) {
+            return null;
+        }
+        else {
+            int check = task.addThread(threadCB);
+            if (check == FAILURE) {
+                return null;
+            }
+        }
+        threadCB.setStatus(ThreadReady);
+        // Set priority
+        readyQueue.append(threadCB);
+        dispatch();
+        return threadCB;
     }
 
     /** 
@@ -93,8 +101,7 @@ public class ThreadCB extends IflThreadCB
 	
 	@OSPProject Threads
     */
-    public void do_kill()
-    {
+    public void do_kill() {
         // your code goes here
 
     }
@@ -115,8 +122,7 @@ public class ThreadCB extends IflThreadCB
 
         @OSPProject Threads
     */
-    public void do_suspend(Event event)
-    {
+    public void do_suspend(Event event) {
         // your code goes here
 
     }
@@ -130,8 +136,7 @@ public class ThreadCB extends IflThreadCB
 	
 	@OSPProject Threads
     */
-    public void do_resume()
-    {
+    public void do_resume() {
         // your code goes here
 
     }
@@ -149,10 +154,9 @@ public class ThreadCB extends IflThreadCB
 
         @OSPProject Threads
     */
-    public static int do_dispatch()
-    {
+    public static int do_dispatch() {
         // your code goes here
-
+        
     }
 
     /**
@@ -163,8 +167,7 @@ public class ThreadCB extends IflThreadCB
 
        @OSPProject Threads
     */
-    public static void atError()
-    {
+    public static void atError() {
         // your code goes here
 
     }
@@ -176,8 +179,7 @@ public class ThreadCB extends IflThreadCB
        
         @OSPProject Threads
      */
-    public static void atWarning()
-    {
+    public static void atWarning() {
         // your code goes here
 
     }
