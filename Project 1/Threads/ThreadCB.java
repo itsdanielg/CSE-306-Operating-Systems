@@ -10,6 +10,7 @@ import osp.Hardware.*;
 import osp.Devices.*;
 import osp.Memory.*;
 import osp.Resources.*;
+import java.util.ArrayList;
 
 /**
  * ID: 111157499
@@ -31,7 +32,10 @@ import osp.Resources.*;
  */
 public class ThreadCB extends IflThreadCB {
 
-    static GenericList readyQueue;
+    static ArrayList<ThreadCB> readyQueue;
+    static ArrayList<ThreadCB> allThreads;
+    long timePutInQueue;
+    long timeReady;
 
     /**
      * The thread constructor. Must call
@@ -53,7 +57,8 @@ public class ThreadCB extends IflThreadCB {
      * @OSPProject Threads
      */
     public static void init() {
-        readyQueue = new GenericList();
+        readyQueue = new ArrayList<>();
+        allThreads = new ArrayList<>();
     }
 
     /**
@@ -73,19 +78,24 @@ public class ThreadCB extends IflThreadCB {
      * @OSPProject Threads
      */
     static public ThreadCB do_create(TaskCB task) {
+        if (task == null) {
+            dispatch();
+            return null;
+        } else if (task.getThreadCount() > MaxThreadsPerTask) {
+            dispatch();
+            return null;
+        }
         ThreadCB threadCB = new ThreadCB();
         threadCB.setTask(task);
-        if (task.getThreadCount() > MaxThreadsPerTask) {
+        int check = task.addThread(threadCB);
+        if (check == FAILURE) {
+            dispatch();
             return null;
-        } else {
-            int check = task.addThread(threadCB);
-            if (check == FAILURE) {
-                return null;
-            }
         }
         threadCB.setStatus(ThreadReady);
-        // Set priority
-        readyQueue.append(threadCB);
+        threadCB.timePutInQueue = System.currentTimeMillis();
+        readyQueue.add(threadCB);
+        allThreads.add(threadCB);
         dispatch();
         return threadCB;
     }
@@ -140,12 +150,11 @@ public class ThreadCB extends IflThreadCB {
     public void do_resume() {
         if (this.getStatus() == ThreadWaiting) {
             this.setStatus(ThreadReady);
-            readyQueue.append(this);
-        }
-        else if (this.getStatus() > ThreadWaiting) {
-            this.setStatus(ThreadReady);
-        }
-        else {
+            this.timePutInQueue = System.currentTimeMillis();
+            readyQueue.add(this);
+        } else if (this.getStatus() > ThreadWaiting) {
+            this.setStatus(this.getStatus() - 1);
+        } else {
             return;
         }
         dispatch();
@@ -164,6 +173,40 @@ public class ThreadCB extends IflThreadCB {
      * @OSPProject Threads
      */
     public static int do_dispatch() {
+        updateAllThreads();
+        ThreadCB currentRunningThread = null;
+        try {
+            currentRunningThread = MMU.getPTBR().getTask().getCurrentThread();
+        } catch (NullPointerException e) {
+            MMU.setPTBR(null);
+            if (readyQueue.isEmpty()) {
+                return FAILURE;
+            }
+        }
+        ThreadCB maxPriorityThread = getHighestPriorityThread();
+        if (maxPriorityThread == null) {
+            return SUCCESS;
+        } else if (currentRunningThread == null) {
+            readyQueue.remove(maxPriorityThread);
+            maxPriorityThread.setStatus(ThreadRunning);
+            MMU.setPTBR(maxPriorityThread.getTask().getPageTable());
+            maxPriorityThread.getTask().setCurrentThread(maxPriorityThread);
+            HTimer.set(100);
+            return SUCCESS;
+        } else if (maxPriorityThread.getPriority() > currentRunningThread.getPriority()) {
+            currentRunningThread.setStatus(ThreadReady);
+            currentRunningThread.timePutInQueue = System.currentTimeMillis();
+            readyQueue.add(currentRunningThread);
+            currentRunningThread.getTask().setCurrentThread(null);
+            MMU.setPTBR(null);
+        } else {
+            return SUCCESS;
+        }
+        readyQueue.remove(maxPriorityThread);
+        maxPriorityThread.setStatus(ThreadRunning);
+        MMU.setPTBR(maxPriorityThread.getTask().getPageTable());
+        maxPriorityThread.getTask().setCurrentThread(maxPriorityThread);
+        HTimer.set(100);
         return SUCCESS;
     }
 
@@ -192,9 +235,41 @@ public class ThreadCB extends IflThreadCB {
 
     }
 
-    /*
-     * Feel free to add methods/fields to improve the readability of your code
-     */
+    public static void updateAllThreads() {
+        if (readyQueue.isEmpty()) {
+            return;
+        } else {
+            for (ThreadCB thread : readyQueue) {
+                thread.timeReady = System.currentTimeMillis() - thread.timePutInQueue;
+                thread.setPriority(calculatePriority(thread));
+            }
+        }
+    }
+
+    public static int calculatePriority(ThreadCB thread) {
+        int totalCPUTime = 0;
+        TaskCB currentTask = thread.getTask();
+        for (ThreadCB currentThread : allThreads) {
+            if (currentThread.getTask() == currentTask) {
+                totalCPUTime += currentThread.getTimeOnCPU();
+            }
+        }
+        int priority = (int) (thread.timeReady / (1 + totalCPUTime));
+        return priority;
+    }
+
+    public static ThreadCB getHighestPriorityThread() {
+        if (readyQueue.isEmpty()) {
+            return null;
+        }
+        ThreadCB currentMaxThread = readyQueue.get(0);
+        for (ThreadCB thread : readyQueue) {
+            if (currentMaxThread.getPriority() < thread.getPriority()) {
+                currentMaxThread = thread;
+            }
+        }
+        return currentMaxThread;
+    }
 
 }
 
