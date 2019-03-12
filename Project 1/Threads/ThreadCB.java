@@ -114,8 +114,25 @@ public class ThreadCB extends IflThreadCB {
      * @OSPProject Threads
      */
     public void do_kill() {
-        // your code goes here
-
+        int currentState = this.getStatus();
+        TaskCB currentTask = this.getTask();
+        if (currentState == ThreadReady) {
+            readyQueue.remove(this);
+        } else if (currentState == ThreadRunning) {
+            currentTask.setCurrentThread(null);
+            MMU.setPTBR(null);
+        } else if (currentState >= ThreadWaiting) {
+            for (int i = 0; i < Device.getTableSize(); i++) {
+                Device.get(i).cancelPendingIO(this);
+            }
+        }
+        this.setStatus(ThreadKill);
+        ResourceCB.giveupResources(this);
+        dispatch();
+        currentTask.removeThread(this);
+        if (currentTask.getThreadCount() == 0) {
+            currentTask.kill();
+        }
     }
 
     /**
