@@ -6,7 +6,7 @@ import osp.Hardware.*;
 
 /**
  * ID: 111157499
- *  Name: Daniel Garcia
+ * Name: Daniel Garcia
  * Email: danieljedryl.garcia@stonybrook.edu
  * Project 1: Threads
  * Due Date: March 12, 2019

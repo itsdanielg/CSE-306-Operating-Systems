@@ -14,7 +14,7 @@ import java.util.ArrayList;
 
 /**
  * ID: 111157499
- *  Name: Daniel Garcia
+ * Name: Daniel Garcia
  * Email: danieljedryl.garcia@stonybrook.edu
  * Project 1: Threads
  * Due Date: March 12, 2019
@@ -36,6 +36,7 @@ public class ThreadCB extends IflThreadCB {
     static ArrayList<ThreadCB> allThreads;
     long timePutInQueue;
     long timeReady;
+    boolean highestPriorityTimeSlice;
 
     /**
      * The thread constructor. Must call
@@ -81,7 +82,7 @@ public class ThreadCB extends IflThreadCB {
         if (task == null) {
             dispatch();
             return null;
-        } else if (task.getThreadCount() > MaxThreadsPerTask) {
+        } else if (task.getThreadCount() >= MaxThreadsPerTask) {
             dispatch();
             return null;
         }
@@ -94,6 +95,8 @@ public class ThreadCB extends IflThreadCB {
         }
         threadCB.setStatus(ThreadReady);
         threadCB.timePutInQueue = System.currentTimeMillis();
+        threadCB.timeReady = 0;
+        threadCB.highestPriorityTimeSlice = false;
         readyQueue.add(threadCB);
         allThreads.add(threadCB);
         dispatch();
@@ -200,26 +203,54 @@ public class ThreadCB extends IflThreadCB {
      * @OSPProject Threads
      */
     public static int do_dispatch() {
-        updateAllThreads();
         ThreadCB currentRunningThread = null;
         try {
             currentRunningThread = MMU.getPTBR().getTask().getCurrentThread();
+            if (HTimer.get() == 0) {
+                currentRunningThread.setStatus(ThreadReady);
+                currentRunningThread.timePutInQueue = System.currentTimeMillis();
+                readyQueue.add(currentRunningThread);
+                currentRunningThread.getTask().setCurrentThread(null);
+                MMU.setPTBR(null);
+                currentRunningThread = null;
+            } else if (HTimer.get() > 10) {
+                currentRunningThread.highestPriorityTimeSlice = true;
+                currentRunningThread.setStatus(ThreadReady);
+                currentRunningThread.timePutInQueue = System.currentTimeMillis();
+                readyQueue.add(currentRunningThread);
+                currentRunningThread.getTask().setCurrentThread(null);
+                MMU.setPTBR(null);
+                currentRunningThread = null;
+            }
         } catch (NullPointerException e) {
             MMU.setPTBR(null);
             if (readyQueue.isEmpty()) {
                 return FAILURE;
             }
         }
+        updateAllThreads();
         ThreadCB maxPriorityThread = getHighestPriorityThread();
         if (maxPriorityThread == null) {
             return SUCCESS;
-        } else if (currentRunningThread == null) {
+        }
+        if (currentRunningThread == null) {
+            if (maxPriorityThread.highestPriorityTimeSlice == true) {
+                maxPriorityThread.highestPriorityTimeSlice = false;
+            }
             readyQueue.remove(maxPriorityThread);
             maxPriorityThread.setStatus(ThreadRunning);
             MMU.setPTBR(maxPriorityThread.getTask().getPageTable());
             maxPriorityThread.getTask().setCurrentThread(maxPriorityThread);
             HTimer.set(100);
             return SUCCESS;
+        }
+        if (maxPriorityThread.highestPriorityTimeSlice == true) {
+            maxPriorityThread.highestPriorityTimeSlice = false;
+            currentRunningThread.setStatus(ThreadReady);
+            currentRunningThread.timePutInQueue = System.currentTimeMillis();
+            readyQueue.add(currentRunningThread);
+            currentRunningThread.getTask().setCurrentThread(null);
+            MMU.setPTBR(null);
         } else if (maxPriorityThread.getPriority() > currentRunningThread.getPriority()) {
             currentRunningThread.setStatus(ThreadReady);
             currentRunningThread.timePutInQueue = System.currentTimeMillis();
@@ -291,6 +322,10 @@ public class ThreadCB extends IflThreadCB {
         }
         ThreadCB currentMaxThread = readyQueue.get(0);
         for (ThreadCB thread : readyQueue) {
+            if (thread.highestPriorityTimeSlice == true) {
+                currentMaxThread = thread;
+                break;
+            }
             if (currentMaxThread.getPriority() < thread.getPriority()) {
                 currentMaxThread = thread;
             }
