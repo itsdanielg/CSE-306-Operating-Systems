@@ -134,8 +134,18 @@ public class ThreadCB extends IflThreadCB {
      * @OSPProject Threads
      */
     public void do_suspend(Event event) {
-        // your code goes here
-
+        int currentState = this.getStatus();
+        if (currentState == ThreadRunning) {
+            this.setStatus(ThreadWaiting);
+            MMU.setPTBR(null);
+            this.getTask().setCurrentThread(null);
+        } else if (currentState >= ThreadWaiting) {
+            this.setStatus(currentState + 1);
+        }
+        if (!(event.contains(this))) {
+            event.addThread(this);
+        }
+        dispatch();
     }
 
     /**
