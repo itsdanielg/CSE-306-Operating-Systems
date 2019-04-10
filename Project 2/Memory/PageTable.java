@@ -12,8 +12,18 @@ import osp.Utilities.*;
 import osp.IFLModules.*;
 import osp.Hardware.*;
 
-public class PageTable extends IflPageTable
-{
+/**
+ * ID: 111157499
+ * Name: Daniel Garcia
+ * Email: danieljedryl.garcia@stonybrook.edu
+ * Project 2: Memory
+ * Due Date: April 11, 2019
+ * Pledge: I pledge my honor that all parts of this project were done by me
+ * individually, without collaboration with anyone, and without consulting
+ * external sources that help with similar projects.
+ */
+
+public class PageTable extends IflPageTable {
     /** 
 	The page table constructor. Must call
 	
@@ -23,8 +33,7 @@ public class PageTable extends IflPageTable
 
 	@OSPProject Memory
     */
-    public PageTable(TaskCB ownerTask)
-    {
+    public PageTable(TaskCB ownerTask) {
         // your code goes here
 
     }
@@ -35,8 +44,7 @@ public class PageTable extends IflPageTable
 
        @OSPProject Memory
     */
-    public void do_deallocateMemory()
-    {
+    public void do_deallocateMemory() {
         // your code goes here
 
     }

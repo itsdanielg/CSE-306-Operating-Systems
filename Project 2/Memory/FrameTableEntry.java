@@ -11,8 +11,18 @@ import osp.Interrupts.*;
 import osp.Utilities.*;
 import osp.IFLModules.IflFrameTableEntry;
 
-public class FrameTableEntry extends IflFrameTableEntry
-{
+/**
+ * ID: 111157499
+ * Name: Daniel Garcia
+ * Email: danieljedryl.garcia@stonybrook.edu
+ * Project 2: Memory
+ * Due Date: April 11, 2019
+ * Pledge: I pledge my honor that all parts of this project were done by me
+ * individually, without collaboration with anyone, and without consulting
+ * external sources that help with similar projects.
+ */
+
+public class FrameTableEntry extends IflFrameTableEntry {
     /**
        The frame constructor. Must have
 
@@ -22,10 +32,8 @@ public class FrameTableEntry extends IflFrameTableEntry
 
        @OSPProject Memory
     */
-    public FrameTableEntry(int frameID)
-    {
-        // your code goes here
-
+    public FrameTableEntry(int frameID) {
+        super(frameID);
     }
 
 

@@ -6,6 +6,18 @@ import osp.Threads.*;
 import osp.Devices.*;
 import osp.Utilities.*;
 import osp.IFLModules.*;
+
+/**
+ * ID: 111157499
+ * Name: Daniel Garcia
+ * Email: danieljedryl.garcia@stonybrook.edu
+ * Project 2: Memory
+ * Due Date: April 11, 2019
+ * Pledge: I pledge my honor that all parts of this project were done by me
+ * individually, without collaboration with anyone, and without consulting
+ * external sources that help with similar projects.
+ */
+
 /**
    The PageTableEntry object contains information about a specific virtual
    page in memory, including the page frame in which it resides.
@@ -14,8 +26,7 @@ import osp.IFLModules.*;
 
 */
 
-public class PageTableEntry extends IflPageTableEntry
-{
+public class PageTableEntry extends IflPageTableEntry {
     /**
        The constructor. Must call
 
@@ -25,8 +36,7 @@ public class PageTableEntry extends IflPageTableEntry
 
        @OSPProject Memory
     */
-    public PageTableEntry(PageTable ownerPageTable, int pageNumber)
-    {
+    public PageTableEntry(PageTable ownerPageTable, int pageNumber) {
         // your code goes here
 
     }
@@ -45,8 +55,7 @@ public class PageTableEntry extends IflPageTableEntry
 
 	@OSPProject Memory
      */
-    public int do_lock(IORB iorb)
-    {
+    public int do_lock(IORB iorb) {
         // your code goes here
 
     }
@@ -57,8 +66,7 @@ public class PageTableEntry extends IflPageTableEntry
 
 	@OSPProject Memory
     */
-    public void do_unlock()
-    {
+    public void do_unlock() {
         // your code goes here
 
     }

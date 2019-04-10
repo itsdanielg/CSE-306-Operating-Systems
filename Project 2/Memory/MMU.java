@@ -9,22 +9,31 @@ import osp.Hardware.*;
 import osp.Interrupts.*;
 
 /**
+ * ID: 111157499
+ * Name: Daniel Garcia
+ * Email: danieljedryl.garcia@stonybrook.edu
+ * Project 2: Memory
+ * Due Date: April 11, 2019
+ * Pledge: I pledge my honor that all parts of this project were done by me
+ * individually, without collaboration with anyone, and without consulting
+ * external sources that help with similar projects.
+ */
+
+/**
     The MMU class contains the student code that performs the work of
     handling a memory reference.  It is responsible for calling the
     interrupt handler if a page fault is required.
 
     @OSPProject Memory
 */
-public class MMU extends IflMMU
-{
+public class MMU extends IflMMU {
     /** 
         This method is called once before the simulation starts. 
 	Can be used to initialize the frame table and other static variables.
 
         @OSPProject Memory
     */
-    public static void init()
-    {
+    public static void init() {
         // your code goes here
 
     }
@@ -49,8 +58,7 @@ public class MMU extends IflMMU
        @OSPProject Memory
     */
     static public PageTableEntry do_refer(int memoryAddress,
-					  int referenceType, ThreadCB thread)
-    {
+					  int referenceType, ThreadCB thread) {
         // your code goes here
 
     }
@@ -62,8 +70,7 @@ public class MMU extends IflMMU
      
 	@OSPProject Memory
      */
-    public static void atError()
-    {
+    public static void atError() {
         // your code goes here
 
     }
@@ -75,8 +82,7 @@ public class MMU extends IflMMU
      
       @OSPProject Memory
      */
-    public static void atWarning()
-    {
+    public static void atWarning() {
         // your code goes here
 
     }
