@@ -34,8 +34,16 @@ public class PageTable extends IflPageTable {
 	@OSPProject Memory
     */
     public PageTable(TaskCB ownerTask) {
-        // your code goes here
-
+        super(ownerTask);
+        // Get number of bits of page size and convert it to decimal
+        int pageAddressBits = MMU.getPageAddressBits();
+        int pageTableSize = bitsToDecimal(pageAddressBits);
+        // Initialize pages to new array of page table entries
+        super.pages = new PageTableEntry[pageTableSize];
+        // Initialize each page with a page table entry
+        for (int i = 0; i < pageTableSize; i++) {
+            super.pages[i] = new PageTableEntry(this, i);
+        }
     }
 
     /**
@@ -45,14 +53,45 @@ public class PageTable extends IflPageTable {
        @OSPProject Memory
     */
     public void do_deallocateMemory() {
-        // your code goes here
+        // Get terminating task of this page table
+        TaskCB currentTask = this.getTask();
+        // Get number of frames
+        int frameSize = MMU.getFrameTableSize();
+        // Unset flags for each frame allocated to the task
+        for (int i = 0; i < frameSize; i++) {
+            FrameTableEntry currentFrame = MMU.getFrame(i);
+            PageTableEntry framePage = currentFrame.getPage();
+            // Check if the page that occupies this frame exists
+            if (framePage != null) {
+                // Only deallocate frames that are associated with the terminating task
+                TaskCB frameTask = framePage.getTask();
+                if (frameTask == currentTask) {
+                    // Nullify page field that occupies frame
+                    currentFrame.setPage(null);
+                    // Clean the page
+                    currentFrame.setDirty(false);
+                    // Unset the reference bit
+                    currentFrame.setReferenced(false);
+                    // Find task that reserves this frame
+                    TaskCB reservedTask = currentFrame.getReserved();
+                    // If this reserved task is the terminating task, unreserve the frame
+                    if (reservedTask == currentTask) {
+                        currentFrame.setUnreserved(currentTask);
+                    }
+                }
+            }
+        }
 
     }
-
-
-    /*
-       Feel free to add methods/fields to improve the readability of your code
-    */
+    
+    // Helper method to convert number of bits to decimal
+    public int bitsToDecimal(int pageAddressBits) {
+        int pageTableSize = 1;
+        for (int i = 0; i < pageAddressBits; i++) {
+            pageTableSize *= 2;
+        }
+        return pageTableSize;
+    }
 
 }
 
