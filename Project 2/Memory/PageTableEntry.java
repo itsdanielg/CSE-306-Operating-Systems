@@ -55,51 +55,51 @@ public class PageTableEntry extends IflPageTableEntry {
 	@OSPProject Memory
      */
     public int do_lock(IORB iorb) {
-        // First, increment lock count
         FrameTableEntry currentFrame = super.getFrame();
-        
-        // Check if page is valid
-        if (super.isValid()) {
-            // If the page is valid, increment the lock count
-            currentFrame.incrementLockCount();
-            return SUCCESS;
-        }
-        else {
-            // Get current thread and thread that caused a pagefault
-            ThreadCB currentThread = iorb.getThread();
-            ThreadCB pagefaultedThread = super.getValidatingThread();
-
-            // If thread that caused a pagefault exists
-            if (pagefaultedThread != null) {
-                // If TH2 == TH1, increment the lock count
-                if (pagefaultedThread == currentThread) {
-                    currentFrame.incrementLockCount();
-                    return SUCCESS;
-                }
-                // Else, wait until the page becomes valid
-                else {
-                    currentThread.suspend(this);
-                    // If this page is still invalid, locking fails
-                    if (super.isValid()) {
-                        return FAILURE;
-                    }
-                    // Else increment the lock count
-                    currentFrame.incrementLockCount();
-                    return SUCCESS;
-                }
-            }
-            // Else, page is not involved in pagefault, so it must handle a pagefault
-            else {
-                PageFaultHandler.handlePageFault(currentThread, GlobalVariables.MemoryLock, this);
-                // If this thread was killed during wait time, locking fails
-                if (currentThread.getStatus() == ThreadKill) {
-                    return FAILURE;
-                }
-                // Else, increment the lock count
+        // Check if the frame exists for this page
+        if (currentFrame != null) {
+            // Check if this page is valid
+            if (super.isValid()) {
+                // If the page is valid, increment the lock count
                 currentFrame.incrementLockCount();
                 return SUCCESS;
             }
+            else {
+                // Get current thread and thread that caused a pagefault
+                ThreadCB currentThread = iorb.getThread();
+                ThreadCB pagefaultedThread = super.getValidatingThread();
+                // Check if the current thread exists
+                if (currentThread != null) {
+                    // Check if the thread that caused a pagefault exists
+                    if (pagefaultedThread != null) {
+                        // If both threads are the same, increment the lock count
+                        if (pagefaultedThread == currentThread) {
+                            currentFrame.incrementLockCount();
+                            return SUCCESS;
+                        }
+                        // Else, wait until the page becomes valid
+                        else {
+                            currentThread.suspend(this);
+                            // If this page becomes valid, increment the lock count
+                            if (super.isValid()) {
+                                currentFrame.incrementLockCount();
+                                return SUCCESS;
+                            }
+                        }
+                    }
+                    // Else, page is not involved in pagefault, so it must handle a pagefault
+                    else {
+                        PageFaultHandler.handlePageFault(currentThread, GlobalVariables.MemoryLock, this);
+                        // If this thread was not killed during wait time, increment the lock count
+                        if (currentThread.getStatus() != ThreadKill) {
+                            currentFrame.incrementLockCount();
+                            return SUCCESS;
+                        }
+                    }
+                }
+            }
         }
+        return FAILURE;
     }
 
     /** This method decreases the lock count on the page by one. 
