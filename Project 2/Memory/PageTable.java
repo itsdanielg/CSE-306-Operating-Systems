@@ -85,7 +85,7 @@ public class PageTable extends IflPageTable {
     }
     
     // Helper method to convert number of bits to decimal
-    public int bitsToDecimal(int pageAddressBits) {
+    public static int bitsToDecimal(int pageAddressBits) {
         int pageTableSize = 1;
         for (int i = 0; i < pageAddressBits; i++) {
             pageTableSize *= 2;

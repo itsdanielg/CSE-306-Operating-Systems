@@ -7,7 +7,6 @@ import osp.Tasks.*;
 import osp.Utilities.*;
 import osp.Hardware.*;
 import osp.Interrupts.*;
-import java.util.ArrayList;
 
 /**
  * ID: 111157499
@@ -68,7 +67,69 @@ public class MMU extends IflMMU {
        @OSPProject Memory
     */
     static public PageTableEntry do_refer(int memoryAddress, int referenceType, ThreadCB thread) {
-        
+        int virtualAddressBits = MMU.getVirtualAddressBits();
+        int pageAddressBits = MMU.getPageAddressBits();
+        int bitsAllocated = virtualAddressBits - pageAddressBits;
+        int pageSize = PageTable.bitsToDecimal(bitsAllocated);
+        // Find the page number of the memory address by dividing the address with the page size
+        int pageNum = memoryAddress / pageSize;
+        // Get the actual page using the page number
+        PageTable pageTable = MMU.getPTBR();
+        // Check if this page table exists
+        if (pageTable != null) {
+            PageTableEntry pageTableEntry = pageTable.pages[pageNum];
+            // Check if this page exists
+            if (pageTableEntry != null) {
+                // Check if page is valid
+                if (pageTableEntry.isValid()) {
+                    // Check if the frame of the page exists
+                    FrameTableEntry pageFrame = pageTableEntry.getFrame();
+                    if (pageFrame != null) {
+                        // If it's valid, set the reference and dirty bits of the page
+                        pageFrame.setReferenced(true);
+                        pageFrame.setDirty(true);
+                    }
+                }
+                // If it's not valid, check two possibilities
+                else {
+                    // Get the thread that caused a page fault
+                    ThreadCB pageFaultThread = pageTableEntry.getValidatingThread();
+                    // First case; Other thread caused a page fault
+                    if (pageFaultThread != null) {
+                        // Suspend the thread passed as a parameter
+                        thread.suspend(pageTableEntry);
+                        // If the thread is not destroyed while waiting for the page to be valid, set the reference and dirty bits of the page
+                        if(thread.getStatus() != GlobalVariables.ThreadKill) {
+                            // Check if the frame of the page exists
+                            FrameTableEntry pageFrame = pageTableEntry.getFrame();
+                            if (pageFrame != null) {
+                                pageFrame.setReferenced(true);
+                                pageFrame.setDirty(true);
+                            }
+                        }
+                    }
+                    // Second case; No other thread caused a pagefault 
+                    else {
+                        // Set the static fields of InterruptVector
+                        InterruptVector.setPage(pageTableEntry);
+                        InterruptVector.setReferenceType(referenceType);
+                        InterruptVector.setThread(thread);
+                        // Call interrupt, which will invoke the page fault handler
+                        CPU.interrupt(PageFault);
+                        // Once it returns, thread will be ready, so set reference and dirty bits
+                        // Check if the frame of the page exists
+                        FrameTableEntry pageFrame = pageTableEntry.getFrame();
+                        if (pageFrame != null) {
+                            pageFrame.setReferenced(true);
+                            pageFrame.setDirty(true);
+                        }
+                    }
+                }
+                return pageTableEntry;
+            }
+            return null;
+        }
+        return null;
     }
 
     /** Called by OSP after printing an error message. The student can
