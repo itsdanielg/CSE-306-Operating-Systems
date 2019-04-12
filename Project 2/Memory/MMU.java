@@ -7,6 +7,7 @@ import osp.Tasks.*;
 import osp.Utilities.*;
 import osp.Hardware.*;
 import osp.Interrupts.*;
+import java.util.ArrayList;
 
 /**
  * ID: 111157499
@@ -33,9 +34,18 @@ public class MMU extends IflMMU {
 
         @OSPProject Memory
     */
-    public static void init() {
-        // your code goes here
 
+    // Declare the frame table
+    static ArrayList<FrameTableEntry> frameTable;
+
+    public static void init() {
+        int totalFrames = MMU.getFrameTableSize();
+        // Initialize each frame in the frame table
+        frameTable = new ArrayList<>();
+        for (int i = 0; i < totalFrames; i++) {
+            FrameTableEntry frameTableEntry = new FrameTableEntry(i);
+            MMU.setFrame(i, frameTableEntry);
+        }
     }
 
     /**
@@ -57,10 +67,8 @@ public class MMU extends IflMMU {
 
        @OSPProject Memory
     */
-    static public PageTableEntry do_refer(int memoryAddress,
-					  int referenceType, ThreadCB thread) {
-        // your code goes here
-
+    static public PageTableEntry do_refer(int memoryAddress, int referenceType, ThreadCB thread) {
+        
     }
 
     /** Called by OSP after printing an error message. The student can
