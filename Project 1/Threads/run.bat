@@ -1,0 +1,1 @@
+java -classpath .;OSP.jar;. osp.OSP
