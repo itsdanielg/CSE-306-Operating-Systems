@@ -1,0 +1,1 @@
+javac -g -classpath .;OSP.jar; -d . *.java
