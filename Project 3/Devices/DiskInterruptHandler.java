@@ -10,13 +10,23 @@ import osp.Memory.*;
 import osp.FileSys.*;
 
 /**
+ * ID: 111157499
+ * Name: Daniel Garcia
+ * Email: danieljedryl.garcia@stonybrook.edu
+ * Project 3: Devices
+ * Due Date: May 2, 2019
+ * Pledge: I pledge my honor that all parts of this project were done by me
+ * individually, without collaboration with anyone, and without consulting
+ * external sources that help with similar projects.
+ */
+
+/**
     The disk interrupt handler.  When a disk I/O interrupt occurs,
     this class is called upon the handle the interrupt.
 
     @OSPProject Devices
 */
-public class DiskInterruptHandler extends IflDiskInterruptHandler
-{
+public class DiskInterruptHandler extends IflDiskInterruptHandler {
     /** 
         Handles disk interrupts. 
         
@@ -40,10 +50,8 @@ public class DiskInterruptHandler extends IflDiskInterruptHandler
 
         @OSPProject Devices 
     */
-    public void do_handleInterrupt()
-    {
+    public void do_handleInterrupt() {
         // your code goes here
-
     }
 
 

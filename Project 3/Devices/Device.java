@@ -17,8 +17,18 @@ import osp.FileSys.*;
 import osp.Tasks.*;
 import java.util.*;
 
-public class Device extends IflDevice
-{
+/**
+ * ID: 111157499
+ * Name: Daniel Garcia
+ * Email: danieljedryl.garcia@stonybrook.edu
+ * Project 3: Devices
+ * Due Date: May 2, 2019
+ * Pledge: I pledge my honor that all parts of this project were done by me
+ * individually, without collaboration with anyone, and without consulting
+ * external sources that help with similar projects.
+ */
+
+public class Device extends IflDevice {
     /**
         This constructor initializes a device with the provided parameters.
 	As a first statement it must have the following:
@@ -29,10 +39,8 @@ public class Device extends IflDevice
 
         @OSPProject Devices
     */
-    public Device(int id, int numberOfBlocks)
-    {
+    public Device(int id, int numberOfBlocks) {
         // your code goes here
-
     }
 
     /**
@@ -41,10 +49,8 @@ public class Device extends IflDevice
 
        @OSPProject Devices
     */
-    public static void init()
-    {
+    public static void init() {
         // your code goes here
-
     }
 
     /**
@@ -64,10 +70,8 @@ public class Device extends IflDevice
        
        @OSPProject Devices
     */
-    public int do_enqueueIORB(IORB iorb)
-    {
+    public int do_enqueueIORB(IORB iorb) {
         // your code goes here
-
     }
 
     /**
@@ -76,10 +80,8 @@ public class Device extends IflDevice
 
        @OSPProject Devices
     */
-    public IORB do_dequeueIORB()
-    {
+    public IORB do_dequeueIORB() {
         // your code goes here
-
     }
 
     /**
@@ -95,10 +97,8 @@ public class Device extends IflDevice
 
         @OSPProject Devices
     */
-    public void do_cancelPendingIO(ThreadCB thread)
-    {
+    public void do_cancelPendingIO(ThreadCB thread) {
         // your code goes here
-
     }
 
     /** Called by OSP after printing an error message. The student can
@@ -108,10 +108,8 @@ public class Device extends IflDevice
 	
 	@OSPProject Devices
      */
-    public static void atError()
-    {
+    public static void atError() {
         // your code goes here
-
     }
 
     /** Called by OSP after printing a warning message. The student
@@ -121,10 +119,8 @@ public class Device extends IflDevice
 	
 	@OSPProject Devices
      */
-    public static void atWarning()
-    {
+    public static void atWarning() {
         // your code goes here
-
     }
 
 
