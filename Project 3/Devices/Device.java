@@ -29,6 +29,7 @@ import java.util.*;
  */
 
 public class Device extends IflDevice {
+
     /**
         This constructor initializes a device with the provided parameters.
 	As a first statement it must have the following:
@@ -40,7 +41,9 @@ public class Device extends IflDevice {
         @OSPProject Devices
     */
     public Device(int id, int numberOfBlocks) {
-        // your code goes here
+        super(id, numberOfBlocks);
+        GenericList iorbQueue = new GenericList();
+        iorbQueue.append(new ArrayList<IORB>());
     }
 
     /**
@@ -50,7 +53,7 @@ public class Device extends IflDevice {
        @OSPProject Devices
     */
     public static void init() {
-        // your code goes here
+        
     }
 
     /**
@@ -71,7 +74,48 @@ public class Device extends IflDevice {
        @OSPProject Devices
     */
     public int do_enqueueIORB(IORB iorb) {
-        // your code goes here
+
+        // Lock the page associated with iorb
+        PageTableEntry iorbPage = iorb.getPage();
+        iorbPage.lock(iorb);
+
+        // If thread is stil alive, increase iorb count of open-file handle associated with iorb
+        if (iorb.getThread().getStatus() == GlobalVariables.ThreadKill) {
+            return FAILURE;
+        }
+        OpenFile iorbOpenFile = iorb.getOpenFile();
+        iorbOpenFile.incrementIORBCount();
+
+        // If thread is stil alive, set the iorb cylinder to cylinder that contains the disk block
+        if (iorb.getThread().getStatus() == GlobalVariables.ThreadKill) {
+            return FAILURE;
+        }
+        Disk disk = (Disk)this;
+        int blockSizeInBytes = (int) Math.pow(2, (MMU.getVirtualAddressBits() - MMU.getPageAddressBits()));
+        int sectorsPerBlock = blockSizeInBytes/disk.getBytesPerSector();
+        int blocksPerTrack = disk.getSectorsPerTrack()/sectorsPerBlock;
+        int tracksPerCylinder = disk.getPlatters();
+        int blocksPerCylinder = blocksPerTrack * tracksPerCylinder;
+        int cylinder = iorb.getBlockNumber() / blocksPerCylinder;
+        iorb.setCylinder(cylinder);
+
+        // If thread is stil alive, check if the device is idle
+        if (iorb.getThread().getStatus() == GlobalVariables.ThreadKill) {
+            return FAILURE;
+        }
+
+        // Start I/O operation if this device is idle
+        if (!this.isBusy()) {
+            startIO(iorb);
+        }
+        // Else, put the request on the most recent device queue that's open
+        else {
+            GenericList deviceIorbQueue = (GenericList)iorbQueue;
+            ArrayList<IORB> openQueue = (ArrayList<IORB>)deviceIorbQueue.getTail();
+            openQueue.add(iorb);
+        }
+        return SUCCESS;
+
     }
 
     /**
