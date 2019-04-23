@@ -30,6 +30,8 @@ import java.util.*;
 
 public class Device extends IflDevice {
 
+    public static int currentHeadCylinder;
+
     /**
         This constructor initializes a device with the provided parameters.
 	As a first statement it must have the following:
@@ -42,8 +44,9 @@ public class Device extends IflDevice {
     */
     public Device(int id, int numberOfBlocks) {
         super(id, numberOfBlocks);
-        GenericList iorbQueue = new GenericList();
-        iorbQueue.append(new ArrayList<IORB>());
+        iorbQueue = new GenericList();
+        ArrayList<IORB> initialQueue = new ArrayList<>();
+        ((GenericList)iorbQueue).append(initialQueue);
     }
 
     /**
@@ -53,7 +56,7 @@ public class Device extends IflDevice {
        @OSPProject Devices
     */
     public static void init() {
-        
+        currentHeadCylinder = 0;
     }
 
     /**
@@ -125,7 +128,21 @@ public class Device extends IflDevice {
        @OSPProject Devices
     */
     public IORB do_dequeueIORB() {
-        // your code goes here
+
+        //  Check if most recent open queue is empty
+        GenericList deviceIORBQueue = (GenericList)iorbQueue;
+        ArrayList<IORB> openQueue = (ArrayList<IORB>)deviceIORBQueue.getTail();
+        if (openQueue.isEmpty()) {
+            return null;
+        }
+
+        // Get the IORB with the shortest seek time from the open queue
+        IORB shortestIORB = getIORB(openQueue);
+
+        // Remove this IORB from the open queue and return the IORB
+        openQueue.remove(shortestIORB);
+        return shortestIORB;
+
     }
 
     /**
@@ -172,6 +189,25 @@ public class Device extends IflDevice {
        Feel free to add methods/fields to improve the readability of your code
     */
 
+    /*
+       Static method to find the IORB with the shortest seek time
+    */
+    public static IORB getIORB(ArrayList<IORB> openQueue) {
+        int openQueueLength = openQueue.size();
+        IORB shortestIORB = openQueue.get(openQueueLength - 1);
+        for (int i = 0; i < openQueueLength; i++) {
+            IORB currentIORB = openQueue.get(i);
+            int currentCylinder = currentIORB.getCylinder();
+            int shortestCylinder = shortestIORB.getCylinder();
+            int currentToHead = Math.abs(currentCylinder - currentHeadCylinder);
+            int shortestToHead = Math.abs(shortestCylinder - currentHeadCylinder);
+            if (currentToHead < shortestToHead) {
+                shortestIORB = currentIORB;
+            }
+        }
+        currentHeadCylinder = shortestIORB.getCylinder();
+        return shortestIORB;
+    }
 }
 
 /*
