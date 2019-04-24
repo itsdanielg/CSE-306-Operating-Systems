@@ -159,7 +159,39 @@ public class Device extends IflDevice {
         @OSPProject Devices
     */
     public void do_cancelPendingIO(ThreadCB thread) {
-        // your code goes here
+
+        //  Iterate through each queue in the iorbQueue
+        GenericList deviceIORBQueue = (GenericList)iorbQueue;
+        for (int i = 0; i < deviceIORBQueue.length(); i++) {
+            // Iterate through IORB in the queue
+            ArrayList<IORB> currentQueue = (ArrayList<IORB>)deviceIORBQueue.getTail();
+            for (int j = 0; i < currentQueue.size(); i++) {
+                IORB iorb = currentQueue.get(j);
+                ThreadCB iorbThread = iorb.getThread();
+                // Check if this iorb is initiated by ThreadCB
+                if (iorbThread == thread) {
+                    // Get the buffer page used by this IORB and unlock it
+                    PageTableEntry page = iorb.getPage();
+                    page.unlock();
+                    // Decrement the IORB count of the IORB's open-file handle
+                    OpenFile iorbOpenFile = iorb.getOpenFile();
+                    iorbOpenFile.decrementIORBCount();
+                    // Try to close the open-file handle; Check if the file has associated IORBs
+                    int openFileIORBs = iorbOpenFile.getIORBCount();
+                    if (openFileIORBs == 0) {
+                        // If there are no associated orbs, check if the closePending flag is true
+                        boolean closePending = iorbOpenFile.closePending;
+                        if (closePending) {
+                            iorbOpenFile.close();
+                        }
+                    }
+                    // Remove the iorb from the currentQueue
+                    currentQueue.remove(iorb);
+                }
+            }
+        }
+        
+
     }
 
     /** Called by OSP after printing an error message. The student can
