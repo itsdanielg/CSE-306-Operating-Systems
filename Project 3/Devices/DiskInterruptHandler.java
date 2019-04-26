@@ -51,7 +51,76 @@ public class DiskInterruptHandler extends IflDiskInterruptHandler {
         @OSPProject Devices 
     */
     public void do_handleInterrupt() {
-        // your code goes here
+
+        // Obtain information from the interrupt vector
+        IORB interruptIORB = (IORB) InterruptVector.getEvent();
+
+        // Decrement IORB count of open-file handle
+        OpenFile iorbOpenFile = interruptIORB.getOpenFile();
+        iorbOpenFile.decrementIORBCount();
+
+        // Try to close the file
+        int openFileIORBs = iorbOpenFile.getIORBCount();
+        if (openFileIORBs == 0) {
+            // If there are no associated IORBs, check if the closePending flag is true
+            boolean closePending = iorbOpenFile.closePending;
+            if (closePending) {
+                iorbOpenFile.close();
+            }
+        }
+
+        // Unlock page associated with the IORB and get its frame
+        PageTableEntry iorbPage = interruptIORB.getPage();
+        iorbPage.unlock();
+        FrameTableEntry pageFrame = iorbPage.getFrame();
+
+        // Check if the task associated with the IORB thread is still alive
+        ThreadCB iorbThread = interruptIORB.getThread();
+        TaskCB iorbTask = iorbThread.getTask();
+        int taskStatus = iorbTask.getStatus();
+        if (taskStatus == TaskLive) {
+            // Check if the thread is still alive
+            if (iorbThread.getStatus() != ThreadKill) {
+                // Check if the I/O operation is not a page swap-in or swap-out
+                int iorbID = interruptIORB.getDeviceID();
+                if (iorbID != SwapDeviceID) {
+                    pageFrame.setReferenced(true);
+                    // Check if this was also a read operation
+                    if (interruptIORB.getIOType() == FileRead) {
+                        pageFrame.setDirty(true);
+                    }
+                }
+                // Else, mark the frame as clean
+                else {
+                    pageFrame.setDirty(false);
+                }
+            }
+        }
+        // Else, if it's dead, unreserve if the frame was reserved by the task
+        else {
+            if (pageFrame.getReserved() == iorbTask) {
+                pageFrame.setUnreserved(iorbTask);
+            }
+        }
+
+        // Wake up threads waiting on the IORBs
+        interruptIORB.notifyThreads();
+
+        // Set device to idle
+        int iorbID = interruptIORB.getDeviceID();
+        Device iorbDevice = Device.get(iorbID);
+        iorbDevice.setBusy(false);
+
+        // Service a new request on the I/O device and append a new queue to close current queue
+        IORB shortestIORB = iorbDevice.dequeueIORB();
+        if (shortestIORB != null) {
+            iorbDevice.startIO(shortestIORB);
+            iorbDevice.addQueue();
+        }
+
+        // Dispatch a new thread
+        ThreadCB.dispatch();
+
     }
 
 
