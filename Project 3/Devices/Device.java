@@ -31,6 +31,7 @@ import java.util.*;
 public class Device extends IflDevice {
 
     public static int currentHeadCylinder;
+    public int openIndex;
 
     /**
         This constructor initializes a device with the provided parameters.
@@ -45,8 +46,7 @@ public class Device extends IflDevice {
     public Device(int id, int numberOfBlocks) {
         super(id, numberOfBlocks);
         iorbQueue = new GenericList();
-        ArrayList<IORB> initialQueue = new ArrayList<>();
-        ((GenericList)iorbQueue).append(initialQueue);
+        openIndex = 0;
     }
 
     /**
@@ -114,8 +114,7 @@ public class Device extends IflDevice {
         // Else, put the request on the most recent device queue that's open
         else {
             GenericList deviceIorbQueue = (GenericList)iorbQueue;
-            ArrayList<IORB> openQueue = (ArrayList<IORB>)deviceIorbQueue.getTail();
-            openQueue.add(iorb);
+            deviceIorbQueue.append(iorb);
         }
         return SUCCESS;
 
@@ -130,18 +129,19 @@ public class Device extends IflDevice {
     public IORB do_dequeueIORB() {
 
         //  Check if most recent open queue is empty
-        GenericList deviceIORBQueue = (GenericList)iorbQueue;
-        ArrayList<IORB> openQueue = (ArrayList<IORB>)deviceIORBQueue.getTail();
-        if (openQueue.isEmpty()) {
-            return null;
+        GenericList deviceIorbQueue = (GenericList)iorbQueue;
+        for (int i = 0; i < deviceIorbQueue.length(); i++) {
+
+            // Get the IORB with the shortest seek time from the open queue
+            IORB shortestIORB = getIORB(deviceIorbQueue);
+
+            // Remove this IORB from the queue and return the IORB
+            deviceIorbQueue.remove(shortestIORB);
+            return shortestIORB;
         }
-
-        // Get the IORB with the shortest seek time from the open queue
-        IORB shortestIORB = getIORB(openQueue);
-
-        // Remove this IORB from the open queue and return the IORB
-        openQueue.remove(shortestIORB);
-        return shortestIORB;
+        
+        // If this is reached, this means the queue is empty, so return null
+        return null;
 
     }
 
@@ -160,34 +160,30 @@ public class Device extends IflDevice {
     */
     public void do_cancelPendingIO(ThreadCB thread) {
 
-        //  Iterate through each queue in the iorbQueue
-        GenericList deviceIORBQueue = (GenericList)iorbQueue;
-        for (int i = 0; i < deviceIORBQueue.length(); i++) {
-            // Iterate through IORB in the queue
-            ArrayList<IORB> currentQueue = (ArrayList<IORB>)deviceIORBQueue.getTail();
-            for (int j = 0; i < currentQueue.size(); i++) {
-                IORB iorb = currentQueue.get(j);
-                ThreadCB iorbThread = iorb.getThread();
-                // Check if this iorb is initiated by ThreadCB
-                if (iorbThread == thread) {
-                    // Get the buffer page used by this IORB and unlock it
-                    PageTableEntry page = iorb.getPage();
-                    page.unlock();
-                    // Decrement the IORB count of the IORB's open-file handle
-                    OpenFile iorbOpenFile = iorb.getOpenFile();
-                    iorbOpenFile.decrementIORBCount();
-                    // Try to close the open-file handle; Check if the file has associated IORBs
-                    int openFileIORBs = iorbOpenFile.getIORBCount();
-                    if (openFileIORBs == 0) {
-                        // If there are no associated orbs, check if the closePending flag is true
-                        boolean closePending = iorbOpenFile.closePending;
-                        if (closePending) {
-                            iorbOpenFile.close();
-                        }
+        // Iterate through IORB in the queue
+        GenericList deviceIorbQueue = (GenericList)iorbQueue;
+        for (int i = 0; i < deviceIorbQueue.length(); i++) {
+            IORB iorb = (IORB) deviceIorbQueue.getAt(i);
+            ThreadCB iorbThread = iorb.getThread();
+            // Check if this iorb is initiated by the given thread
+            if (iorbThread == thread) {
+                // Get the buffer page used by this IORB and unlock it
+                PageTableEntry page = iorb.getPage();
+                page.unlock();
+                // Decrement the IORB count of the IORB's open-file handle
+                OpenFile iorbOpenFile = iorb.getOpenFile();
+                iorbOpenFile.decrementIORBCount();
+                // Try to close the open-file handle; Check if the file has associated IORBs
+                int openFileIORBs = iorbOpenFile.getIORBCount();
+                if (openFileIORBs == 0) {
+                    // If there are no associated IORBs, check if the closePending flag is true
+                    boolean closePending = iorbOpenFile.closePending;
+                    if (closePending) {
+                        iorbOpenFile.close();
                     }
-                    // Remove the iorb from the currentQueue
-                    currentQueue.remove(iorb);
                 }
+                // Remove the iorb from the currentQueue
+                deviceIorbQueue.remove(iorb);
             }
         }
         
@@ -224,11 +220,11 @@ public class Device extends IflDevice {
     /*
        Static method to find the IORB with the shortest seek time
     */
-    public static IORB getIORB(ArrayList<IORB> openQueue) {
-        int openQueueLength = openQueue.size();
-        IORB shortestIORB = openQueue.get(openQueueLength - 1);
-        for (int i = 0; i < openQueueLength; i++) {
-            IORB currentIORB = openQueue.get(i);
+    public static IORB getIORB(GenericList iorbQueue) {
+        int queueLength = iorbQueue.length();
+        IORB shortestIORB = (IORB) iorbQueue.getAt(queueLength - 1);
+        for (int i = 0; i < queueLength; i++) {
+            IORB currentIORB = (IORB) iorbQueue.getAt(i);
             int currentCylinder = currentIORB.getCylinder();
             int shortestCylinder = shortestIORB.getCylinder();
             int currentToHead = Math.abs(currentCylinder - currentHeadCylinder);
@@ -240,6 +236,7 @@ public class Device extends IflDevice {
         currentHeadCylinder = shortestIORB.getCylinder();
         return shortestIORB;
     }
+    
 }
 
 /*

@@ -115,7 +115,6 @@ public class DiskInterruptHandler extends IflDiskInterruptHandler {
         IORB shortestIORB = iorbDevice.dequeueIORB();
         if (shortestIORB != null) {
             iorbDevice.startIO(shortestIORB);
-            iorbDevice.addQueue();
         }
 
         // Dispatch a new thread
