@@ -112,6 +112,9 @@ public class DiskInterruptHandler extends IflDiskInterruptHandler {
         iorbDevice.setBusy(false);
 
         // Service a new request on the I/O device and append a new queue to close current queue
+        if (iorbDevice.getIndex() == 0) {
+            iorbDevice.setIndex(iorbDevice.getQueue().length());
+        }
         IORB shortestIORB = iorbDevice.dequeueIORB();
         if (shortestIORB != null) {
             iorbDevice.startIO(shortestIORB);

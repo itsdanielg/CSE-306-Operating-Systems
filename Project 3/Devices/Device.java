@@ -133,10 +133,11 @@ public class Device extends IflDevice {
         for (int i = 0; i < deviceIorbQueue.length(); i++) {
 
             // Get the IORB with the shortest seek time from the open queue
-            IORB shortestIORB = getIORB(deviceIorbQueue);
+            IORB shortestIORB = getIORB(deviceIorbQueue, this.openIndex);
 
             // Remove this IORB from the queue and return the IORB
             deviceIorbQueue.remove(shortestIORB);
+            this.openIndex--;
             return shortestIORB;
         }
         
@@ -183,6 +184,9 @@ public class Device extends IflDevice {
                     }
                 }
                 // Remove the iorb from the currentQueue
+                if (i < this.openIndex) {
+                    this.openIndex--;
+                }
                 deviceIorbQueue.remove(iorb);
             }
         }
@@ -220,10 +224,9 @@ public class Device extends IflDevice {
     /*
        Static method to find the IORB with the shortest seek time
     */
-    public static IORB getIORB(GenericList iorbQueue) {
-        int queueLength = iorbQueue.length();
-        IORB shortestIORB = (IORB) iorbQueue.getAt(queueLength - 1);
-        for (int i = 0; i < queueLength; i++) {
+    public static IORB getIORB(GenericList iorbQueue, int openIndex) {
+        IORB shortestIORB = (IORB) iorbQueue.getAt(openIndex - 1);
+        for (int i = 0; i < openIndex; i++) {
             IORB currentIORB = (IORB) iorbQueue.getAt(i);
             int currentCylinder = currentIORB.getCylinder();
             int shortestCylinder = shortestIORB.getCylinder();
@@ -235,6 +238,19 @@ public class Device extends IflDevice {
         }
         currentHeadCylinder = shortestIORB.getCylinder();
         return shortestIORB;
+    }
+
+    public void setIndex(int index) {
+        this.openIndex = index;
+    }
+
+    public int getIndex() {
+        return this.openIndex;
+    }
+
+    public GenericList getQueue() {
+        GenericList deviceIorbQueue = (GenericList)iorbQueue;
+        return deviceIorbQueue;
     }
     
 }
