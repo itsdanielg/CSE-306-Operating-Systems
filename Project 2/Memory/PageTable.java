@@ -37,7 +37,7 @@ public class PageTable extends IflPageTable {
         super(ownerTask);
         // Get number of bits of page size and convert it to decimal
         int pageAddressBits = MMU.getPageAddressBits();
-        int pageTableSize = bitsToDecimal(pageAddressBits);
+        int pageTableSize = (int) Math.pow(2, pageAddressBits);
         // Initialize pages to new array of page table entries
         super.pages = new PageTableEntry[pageTableSize];
         // Initialize each page with a page table entry
@@ -55,51 +55,34 @@ public class PageTable extends IflPageTable {
     public void do_deallocateMemory() {
         // Get terminating task of this page table
         TaskCB currentTask = this.getTask();
-        // Check if this task exists
-        if (currentTask != null) {
-            // Get number of frames
-            int frameSize = MMU.getFrameTableSize();
-            // Unset flags for each frame allocated to the task
-            for (int i = 0; i < frameSize; i++) {
-                FrameTableEntry currentFrame = MMU.getFrame(i);
-                // Check if the frame exists
-                if (currentFrame != null) {
-                    PageTableEntry framePage = currentFrame.getPage();
-                    // Check if the page that occupies this frame exists
-                    if (framePage != null) {
-                        TaskCB frameTask = framePage.getTask();
-                        // Only deallocate frames that are associated with the terminating task
-                        if (frameTask == currentTask) {
-                            // Nullify page field that occupies frame
-                            currentFrame.setPage(null);
-                            // Clean the page
-                            currentFrame.setDirty(false);
-                            // Unset the reference bit
-                            currentFrame.setReferenced(false);
-                            // Find the task that reserves this frame
-                            TaskCB reservedTask = currentFrame.getReserved();
-                            // If this reserved task is the terminating task, unreserve the frame
-                            if (reservedTask == currentTask) {
-                                currentFrame.setUnreserved(currentTask);
-                            }
-                        }
+        // Get number of frames
+        int frameSize = MMU.getFrameTableSize();
+        // Unset flags for each frame allocated to the task
+        for (int i = 0; i < frameSize; i++) {
+            FrameTableEntry currentFrame = MMU.getFrame(i);
+            PageTableEntry framePage = currentFrame.getPage();
+            // Check if the page that occupies this frame exists
+            if (framePage != null) {
+                TaskCB frameTask = framePage.getTask();
+                // Only deallocate frames that are associated with the terminating task
+                if (frameTask == currentTask) {
+                    // Nullify page field that occupies frame
+                    currentFrame.setPage(null);
+                    // Clean the page
+                    currentFrame.setDirty(false);
+                    // Unset the reference bit
+                    currentFrame.setReferenced(false);
+                    // Find the task that reserves this frame
+                    TaskCB reservedTask = currentFrame.getReserved();
+                    // If this reserved task is the terminating task, unreserve the frame
+                    if (reservedTask == currentTask) {
+                        currentFrame.setUnreserved(currentTask);
                     }
                 }
             }
         }
     }
     
-    /**
-        Helper method to convert number of bits to decimal
-    */
-    public static int bitsToDecimal(int numberOfBits) {
-        int decimal = 1;
-        for (int i = 0; i < numberOfBits; i++) {
-            decimal *= 2;
-        }
-        return decimal;
-    }
-
 }
 
 /*
