@@ -55,50 +55,34 @@ public class PageTableEntry extends IflPageTableEntry {
 	@OSPProject Memory
      */
     public int do_lock(IORB iorb) {
-        FrameTableEntry currentFrame = super.getFrame();
-        // Check if the frame exists for this page
-        if (currentFrame != null) {
-            // Check if this page is valid
-            if (super.isValid()) {
-                // If the page is valid, increment the lock count
-                currentFrame.incrementLockCount();
-                return SUCCESS;
+
+        // Get current thread and thread that caused a pagefault
+        ThreadCB currentThread = iorb.getThread();
+        
+        // Check if this page is valid
+        if (!isValid()) {
+            ThreadCB pagefaultedThread = getValidatingThread();
+            // Check if there is no thread that already caused a page fault
+            if (pagefaultedThread == null) {
+                PageFaultHandler.handlePageFault(currentThread, GlobalVariables.MemoryLock, this);
+                // If this thread was not killed during wait time, increment the lock count
+                if (currentThread.getStatus() == ThreadKill) {
+                    return FAILURE;
+                }
             }
             else {
-                // Get current thread and thread that caused a pagefault
-                ThreadCB currentThread = iorb.getThread();
-                ThreadCB pagefaultedThread = super.getValidatingThread();
-                // Check if the current thread exists
-                if (currentThread != null) {
-                    // Check if the thread that caused a pagefault exists
-                    if (pagefaultedThread != null) {
-                        // If both threads are the same, increment the lock count
-                        if (pagefaultedThread == currentThread) {
-                            currentFrame.incrementLockCount();
-                            return SUCCESS;
-                        }
-                        // Else, wait until the page becomes valid
-                        else {
-                            currentThread.suspend(this);
-                            // If this page becomes valid, increment the lock count
-                            if (super.isValid()) {
-                                currentFrame.incrementLockCount();
-                                return SUCCESS;
-                            }
-                        }
-                    }
-                    // Else, page is not involved in pagefault, so it must handle a pagefault
-                    else {
-                        PageFaultHandler.handlePageFault(currentThread, GlobalVariables.MemoryLock, this);
-                        // If this thread was not killed during wait time, increment the lock count
-                        if (currentThread.getStatus() != ThreadKill) {
-                            currentFrame.incrementLockCount();
-                            return SUCCESS;
-                        }
+                // If both threads are the same, increment the lock count
+                if (pagefaultedThread != currentThread) {
+                    currentThread.suspend(this);
+                    // If this page becomes valid, increment the lock count
+                    if (!isValid()) {
+                        return FAILURE;
                     }
                 }
             }
         }
+        FrameTableEntry currentFrame = super.getFrame();
+        currentFrame.incrementLockCount();
         return FAILURE;
     }
 
@@ -110,13 +94,10 @@ public class PageTableEntry extends IflPageTableEntry {
     */
     public void do_unlock() {
         FrameTableEntry currentFrame = super.getFrame();
-        // If this frame exists, continue with unlocking
-        if (currentFrame != null) {
-            int currentLockCount = currentFrame.getLockCount();
-            // Only unlock if the current lock count is above 0
-            if (currentLockCount > 0) {
-                super.getFrame().decrementLockCount();
-            }
+        int currentLockCount = currentFrame.getLockCount();
+        // Only unlock if the current lock count is above 0
+        if (currentLockCount > 0) {
+            super.getFrame().decrementLockCount();
         }
     }
 
